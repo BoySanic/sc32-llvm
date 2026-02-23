@@ -113,7 +113,6 @@ SDValue SC32TargetLowering::LowerCall(CallLoweringInfo &CLI,
   else if (ExternalSymbolSDNode *E = dyn_cast<ExternalSymbolSDNode>(Callee))
     Callee = DAG.getTargetExternalSymbol(E->getSymbol(), MVT::i32);
 
-  SmallVector<SDValue, 8> MemOpChains;
   SmallVector<SDValue, 8> Ops = {SDValue(), Callee};
   SDValue Glue;
 
@@ -122,18 +121,23 @@ SDValue SC32TargetLowering::LowerCall(CallLoweringInfo &CLI,
   CCInfo.AnalyzeCallOperands(CLI.Outs, CC_SC32);
 
   for (size_t I = 0; I < ArgLocs.size(); I++) {
+    if (ArgLocs[I].isMemLoc()) {
+      int Offset = ArgLocs[I].getLocMemOffset() - CCInfo.getStackSize() - 8;
+      SDValue StackPtr = DAG.getCopyFromReg(Chain, DL, SC32::GP29, MVT::i32);
+      Chain = StackPtr.getValue(1);
+      SDValue PtrOff = DAG.getSignedConstant(-Offset, DL, MVT::i32);
+      PtrOff = DAG.getNode(ISD::SUB, DL, MVT::i32, StackPtr, PtrOff);
+      Chain =
+          DAG.getStore(Chain, DL, CLI.OutVals[I], PtrOff, MachinePointerInfo());
+    }
+  }
+
+  for (size_t I = 0; I < ArgLocs.size(); I++) {
     if (ArgLocs[I].isRegLoc()) {
       Register Reg = ArgLocs[I].getLocReg();
       Chain = DAG.getCopyToReg(Chain, DL, Reg, CLI.OutVals[I], Glue);
       Glue = Chain.getValue(1);
       Ops.push_back(DAG.getRegister(Reg, MVT::i32));
-    } else {
-      unsigned Offset = ArgLocs[I].getLocMemOffset();
-      SDValue StackPtr = DAG.getRegister(SC32::GP29, MVT::i32);
-      SDValue PtrOff = DAG.getIntPtrConstant(Offset, DL);
-      PtrOff = DAG.getNode(ISD::ADD, DL, MVT::i32, StackPtr, PtrOff);
-      Chain =
-          DAG.getStore(Chain, DL, CLI.OutVals[I], PtrOff, MachinePointerInfo());
     }
   }
 
