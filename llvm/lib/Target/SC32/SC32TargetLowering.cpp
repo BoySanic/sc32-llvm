@@ -35,7 +35,6 @@ SDValue SC32TargetLowering::LowerFormalArguments(
     const SmallVectorImpl<ISD::InputArg> &Ins, const SDLoc &DL,
     SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
   MachineFunction &MF = DAG.getMachineFunction();
-
   MachineRegisterInfo &RI = MF.getRegInfo();
 
   SmallVector<CCValAssign, 16> ArgLocs;
