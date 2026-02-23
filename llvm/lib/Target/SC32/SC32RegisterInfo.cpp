@@ -38,15 +38,6 @@ BitVector SC32RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   return Reserved;
 }
 
-static bool isCallOpcode(unsigned Opcode) {
-  switch (Opcode) {
-  // TODO: Remember to add CALL later
-  case SC32::CALLI:
-    return true;
-  default:
-    return false;
-  }
-}
 static bool isLoadStoreOpcode(unsigned Opcode) {
   switch (Opcode) {
   case SC32::LD:
