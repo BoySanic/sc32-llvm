@@ -44,44 +44,23 @@ SDValue SC32TargetLowering::LowerFormalArguments(
                  *DAG.getContext());
   CCInfo.AnalyzeFormalArguments(Ins, CC_SC32);
 
-  unsigned IndirectIdx = 0;
-  for (size_t I = 0; I < ArgLocs.size(); I++, ++IndirectIdx) {
+  for (size_t I = 0; I < ArgLocs.size(); I++) {
+    assert(ArgLocs[I].getLocInfo() != CCValAssign::Indirect);
     if (ArgLocs[I].isRegLoc()) {
       Register VReg = RI.createVirtualRegister(&SC32::GPRegClass);
       RI.addLiveIn(ArgLocs[I].getLocReg(), VReg);
       InVals.push_back(DAG.getCopyFromReg(Chain, DL, VReg, MVT::i32));
     } else {
       // MemLoc
-      unsigned Offset = ArgLocs[I].getLocMemOffset();
+      signed Offset = ArgLocs[I].getLocMemOffset() - CCInfo.getStackSize();
+      llvm::errs() << "offset: " << Offset << "\n";
+
       int FI = MF.getFrameInfo().CreateFixedObject(4, Offset, true);
       SDValue FIPtr = DAG.getFrameIndex(FI, PtrVT);
       SDValue Load = DAG.getLoad(ArgLocs[I].getLocVT(), DL, Chain, FIPtr,
                                  MachinePointerInfo::getFixedStack(MF, FI));
-      if (ArgLocs[I].getLocInfo() != CCValAssign::Indirect) {
-        // Direct load
-        InVals.push_back(Load);
-        continue;
-      }
-      assert(ArgLocs[I].getLocInfo() == CCValAssign::Indirect);
-      // Indrect load
-      SDValue ArgValue = DAG.getLoad(ArgLocs[I].getValVT(), DL, Chain, Load,
-                                     MachinePointerInfo());
-      InVals.push_back(ArgValue);
-
-      unsigned ArgIndex = Ins[IndirectIdx].OrigArgIndex;
-      assert(Ins[IndirectIdx].PartOffset == 0);
-
-      while (I + 1 != ArgLocs.size() &&
-             Ins[IndirectIdx + 1].OrigArgIndex == ArgIndex) {
-        CCValAssign &PartVA = ArgLocs[I + 1];
-        unsigned PartOffset = Ins[IndirectIdx + 1].PartOffset;
-        SDValue Address = DAG.getMemBasePlusOffset(
-            ArgValue, TypeSize::getFixed(PartOffset), DL);
-        InVals.push_back(DAG.getLoad(PartVA.getValVT(), DL, Chain, Address,
-                                     MachinePointerInfo()));
-        ++I;
-        ++IndirectIdx;
-      }
+      InVals.push_back(Load);
+      continue;
     }
   }
 
