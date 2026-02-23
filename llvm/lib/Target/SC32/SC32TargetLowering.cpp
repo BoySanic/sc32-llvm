@@ -53,8 +53,6 @@ SDValue SC32TargetLowering::LowerFormalArguments(
     } else {
       // MemLoc
       signed Offset = ArgLocs[I].getLocMemOffset() - CCInfo.getStackSize();
-      llvm::errs() << "offset: " << Offset << "\n";
-
       int FI = MF.getFrameInfo().CreateFixedObject(4, Offset, true);
       SDValue FIPtr = DAG.getFrameIndex(FI, PtrVT);
       SDValue Load = DAG.getLoad(ArgLocs[I].getLocVT(), DL, Chain, FIPtr,

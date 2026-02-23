@@ -78,7 +78,6 @@ bool SC32RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI,
 
   Register FrameReg;
   StackOffset Offset = FL.getFrameIndexReference(MF, MO.getIndex(), FrameReg);
-  errs() << "efi offset: " << Offset.getFixed() << "\n";
   int FixedOffset = Offset.getFixed() - MFI.getStackSize();
 
   assert(SPAdj == 0);
