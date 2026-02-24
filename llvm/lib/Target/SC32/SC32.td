@@ -80,6 +80,10 @@ def HI20 : SDNodeXForm<imm, [{
   return CurDAG->getTargetConstant(N->getZExtValue() >> 12, SDLoc(N), MVT::i32);
 }]>;
 
+def BranchOffset : PatLeaf<(imm), [{
+    return isInt<16>(N->getSExtValue());
+}]>;
+
 def MemOffset : PatLeaf<(imm), [{
     return isInt<15>(N->getSExtValue());
 }]>;
@@ -307,8 +311,9 @@ let Namespace = "SC32" in {
 }
 def : Pat<(i32 (frameindex:$ptr)), (ADDI (i32 (to_tframeindex $ptr)), (i32 0))>;
 
+// Indirect branch
 def : Pat<(brind i32:$tgt), (BR GP:$tgt, (i32 0))>;
-def : Pat<(brind (add GP:$base, MemOffset:$offset)), (BR GP:$base, imm:$offset)>;
+def : Pat<(brind (add GP:$base, BranchOffset:$offset)), (BR GP:$base, imm:$offset)>;
 
 def : Pat<(i32 LLIimm:$val), (LLI imm:$val)>;
 def : Pat<(i32 LUIimm:$val), (LUI (HI20 imm:$val))>;
@@ -334,9 +339,11 @@ def : Pat<(load frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
 // Halfword loads
 def : Pat<(zextloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
 def : Pat<(zextloadi16 (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
+def : Pat<(zextloadi16 frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
 
 def : Pat<(extloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
 def : Pat<(extloadi16 (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
+def : Pat<(extloadi16 frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
 
 // Byte loads
 def : Pat<(zextloadi8 i32:$addr), (LDB i32:$addr, (i32 0))>;
