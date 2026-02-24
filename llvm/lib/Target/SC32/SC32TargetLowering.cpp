@@ -49,23 +49,30 @@ SDValue SC32TargetLowering::LowerFormalArguments(
 
   for (size_t I = 0; I < ArgLocs.size(); I++) {
     assert(ArgLocs[I].getLocInfo() != CCValAssign::Indirect);
+
     if (ArgLocs[I].isRegLoc()) {
       Register VReg = RI.createVirtualRegister(&SC32::GPRegClass);
       RI.addLiveIn(ArgLocs[I].getLocReg(), VReg);
       InVals.push_back(DAG.getCopyFromReg(Chain, DL, VReg, MVT::i32));
     } else {
-      // MemLoc
+      assert(ArgLocs[I].isMemLoc());
       signed Offset = ArgLocs[I].getLocMemOffset() - CCInfo.getStackSize();
       int FI = MF.getFrameInfo().CreateFixedObject(4, Offset, true);
       SDValue FIPtr = DAG.getFrameIndex(FI, MVT::i32);
       SDValue Load = DAG.getLoad(ArgLocs[I].getLocVT(), DL, Chain, FIPtr,
                                  MachinePointerInfo::getFixedStack(MF, FI));
       InVals.push_back(Load);
-      continue;
     }
   }
 
   return Chain;
+}
+
+bool SC32TargetLowering::CanLowerReturn(
+    CallingConv::ID CallConv, MachineFunction &MF, bool IsVarArg,
+    const SmallVectorImpl<ISD::OutputArg> &Outs, LLVMContext &Context,
+    const Type *RetTy) const {
+  return Outs.empty() || (Outs.size() == 1 && Outs[0].VT == MVT::i32);
 }
 
 SDValue
@@ -83,6 +90,7 @@ SC32TargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   SDValue Glue;
 
   for (size_t I = 0; I < RVLocs.size(); I++) {
+    assert(RVLocs[I].isRegLoc());
     Register Reg = RVLocs[I].getLocReg();
     Chain = DAG.getCopyToReg(Chain, DL, Reg, OutVals[I], Glue);
     Glue = Chain.getValue(1);
@@ -164,6 +172,7 @@ SDValue SC32TargetLowering::LowerCall(CallLoweringInfo &CLI,
   RVInfo.AnalyzeCallResult(CLI.Ins, RetCC_SC32);
 
   for (size_t I = 0; I < RVLocs.size(); I++) {
+    assert(RVLocs[I].isRegLoc());
     Register Reg = RVLocs[I].getLocReg();
     Chain = DAG.getCopyFromReg(Chain, DL, Reg, MVT::i32, Glue).getValue(1);
     Glue = Chain.getValue(2);
