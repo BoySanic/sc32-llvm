@@ -68,6 +68,10 @@ def SDT_SC32Ret : SDTypeProfile<0, 0, []>;
 def call : SDNode<"SC32ISD::CALL", SDT_SC32Call, [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue, SDNPVariadic]>;
 def retglue : SDNode<"SC32ISD::RET_GLUE", SDT_SC32Ret, [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
 
+def to_tframeindex : SDNodeXForm<frameindex, [{
+  return CurDAG->getTargetFrameIndex(N->getIndex(), MVT::i32);
+}]>;
+
 def LO20 : SDNodeXForm<imm, [{
   return CurDAG->getTargetConstant(N->getZExtValue() & 0xFFFFF, SDLoc(N), MVT::i32);
 }]>;
@@ -278,6 +282,8 @@ let Namespace = "SC32" in {
     let AsmString = "AMOV $dst";
   }
 }
+
+def : Pat<(i32 (frameindex:$ptr)), (ADDI (i32 (to_tframeindex $ptr)), (i32 0))>;
 
 def : Pat<(i32 LLIimm:$val), (LLI imm:$val)>;
 def : Pat<(i32 LUIimm:$val), (LUI (HI20 imm:$val))>;

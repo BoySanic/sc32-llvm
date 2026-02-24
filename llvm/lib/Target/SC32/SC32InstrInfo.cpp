@@ -144,6 +144,7 @@ void SC32InstrInfo::storeRegToStackSlot(
       .addFrameIndex(FrameIndex)
       .addImm(0);
 }
+
 void SC32InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
                                          MachineBasicBlock::iterator MI,
                                          Register DestReg, int FrameIndex,

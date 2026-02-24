@@ -63,6 +63,16 @@ static bool isCommutativeOpcode(unsigned Opcode) {
   }
 }
 
+static bool isAddSubImmediateOpcode(unsigned Opcode) {
+  switch (Opcode) {
+  case SC32::ADDI:
+  case SC32::SUBI:
+    return true;
+  default:
+    return false;
+  }
+}
+
 bool SC32RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI,
                                            int SPAdj, unsigned FIOperandNum,
                                            RegScavenger *RS) const {
@@ -89,6 +99,32 @@ bool SC32RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI,
     if (TotalOffset >= -0x4000 && TotalOffset < 0x4000) {
       MI->getOperand(1).ChangeToRegister(FrameReg, false);
       MI->getOperand(2).setImm(TotalOffset);
+      return false;
+    }
+  } else if (isAddSubImmediateOpcode(MI->getOpcode()) && FIOperandNum == 1) {
+    int TotalOffset = FixedOffset;
+
+    if (MI->getOpcode() == SC32::ADDI) {
+      TotalOffset += MI->getOperand(2).getImm();
+    } else {
+      TotalOffset -= MI->getOperand(2).getImm();
+    }
+
+    Register TiedReg = MI->getOperand(0).getReg();
+
+    if (TotalOffset >= 0 && TotalOffset < 0x10000) {
+      BuildMI(MBB, MI, DL, II.get(SC32::MOV), TiedReg).addReg(FrameReg);
+      MI->setDesc(II.get(SC32::ADDI));
+      MI->getOperand(1).ChangeToRegister(TiedReg, false);
+      MI->getOperand(2).setImm(TotalOffset);
+      return false;
+    }
+
+    if (TotalOffset <= 0 && TotalOffset > -0x10000) {
+      BuildMI(MBB, MI, DL, II.get(SC32::MOV), TiedReg).addReg(FrameReg);
+      MI->setDesc(II.get(SC32::SUBI));
+      MI->getOperand(1).ChangeToRegister(TiedReg, false);
+      MI->getOperand(2).setImm(-TotalOffset);
       return false;
     }
   }
