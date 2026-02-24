@@ -295,18 +295,23 @@ def : Pat<(i32 imm:$val), (ORI (LUI (HI20 imm:$val)), (LO20 imm:$val))>;
 
 def : Pat<(store i32:$val, i32:$addr), (ST i32:$val, i32:$addr, (i32 0))>;
 def : Pat<(store i32:$val, (add GP:$base, MemOffset:$offset)), (ST i32:$val, GP:$base, imm:$offset)>;
+def : Pat<(store i32:$val, frameindex:$ptr), (ST i32:$val, (to_tframeindex $ptr), (i32 0))>;
 
 def : Pat<(truncstorei8 i32:$val, i32:$addr), (STB i32:$val, i32:$addr, (i32 0))>;
 def : Pat<(truncstorei8 i32:$val, (add GP:$base, MemOffset:$offset)), (STB i32:$val, GP:$base, imm:$offset)>;
+def : Pat<(truncstorei8 i32:$val, frameindex:$ptr), (STB i32:$val, (to_tframeindex $ptr), (i32 0))>;
 
 def : Pat<(load i32:$addr), (LD i32:$addr, (i32 0))>;
 def : Pat<(load (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
+def : Pat<(load frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
 
 def : Pat<(zextloadi8 i32:$addr), (LDB i32:$addr, (i32 0))>;
 def : Pat<(zextloadi8 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
+def : Pat<(zextloadi8 frameindex:$ptr), (LDB (to_tframeindex $ptr), (i32 0))>;
 
 def : Pat<(extloadi8 i32:$addr), (LDB i32:$addr, (i32 0))>;
 def : Pat<(extloadi8 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
+def : Pat<(extloadi8 frameindex:$ptr), (LDB (to_tframeindex $ptr), (i32 0))>;
 
 def SC32InstrInfo : InstrInfo;
 
