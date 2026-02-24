@@ -20,15 +20,25 @@ SC32TargetLowering::SC32TargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::MULHU, MVT::i32, Expand);
   setOperationAction(ISD::MUL, MVT::i32, Expand);
 
+  setOperationAction(ISD::BR_JT, MVT::Other, Expand);
   setOperationAction(ISD::BR_CC, MVT::i32, Custom);
   setOperationAction(ISD::SELECT_CC, MVT::i32, Custom);
 
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Expand);
+  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i1, Expand);
 
   setOperationAction(ISD::CTLZ, MVT::i32, Expand);
   setOperationAction(ISD::CTTZ, MVT::i32, Expand);
   setOperationAction(ISD::CTPOP, MVT::i32, Expand);
+  setOperationAction(ISD::SETCC, MVT::i32, Expand);
+
+  setLoadExtAction(ISD::EXTLOAD, MVT::i32, MVT::i8, Expand);
   setLoadExtAction(ISD::SEXTLOAD, MVT::i32, MVT::i8, Expand);
+
+  setLoadExtAction(ISD::SEXTLOAD, MVT::i32, MVT::i16, Expand);
+  setLoadExtAction(ISD::ZEXTLOAD, MVT::i32, MVT::i16, Expand);
+
+  setTruncStoreAction(MVT::i32, MVT::i16, Expand);
 
   setOperationAction(ISD::GlobalAddress, MVT::i32, Custom);
 

@@ -139,6 +139,14 @@ multiclass AUXOperator<string OpStr, SDNode OpNode> {
   }
 }
 
+class Branch<string OpStr, CondCode OpCC> : Instruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins GP:$tgt, i32imm:$offset);
+  let AsmString = !strconcat(OpStr, " $tgt, $offset");
+  let Uses = [FLAGS];
+  let isTerminator = 1;
+}
+
 class Jump<string OpStr, CondCode OpCC> : Instruction {
   let OutOperandList = (outs);
   let InOperandList = (ins jmptarget:$tgt);
@@ -231,6 +239,14 @@ let Namespace = "SC32" in {
     let AsmString = "MOV $dst, $src";
   }
 
+  def CALL : Instruction {
+    let OutOperandList = (outs);
+    let InOperandList = (ins GP:$tgt);
+    let Pattern = [(call GP:$tgt)];
+    let AsmString = "CALL $tgt";
+    let isCall = 1;
+  }
+
   def CALLI : Instruction {
     let OutOperandList = (outs);
     let InOperandList = (ins calltarget:$tgt);
@@ -248,6 +264,13 @@ let Namespace = "SC32" in {
     let isReturn = 1;
   }
 
+  def BR : Instruction {
+    let OutOperandList = (outs);
+    let InOperandList = (ins GP:$tgt);
+    let AsmString = "BR $tgt";
+    let isTerminator = 1;
+    let isBranch = 1;
+  }
   def JMP : Instruction {
     let OutOperandList = (outs);
     let InOperandList = (ins jmptarget:$tgt);
@@ -282,8 +305,9 @@ let Namespace = "SC32" in {
     let AsmString = "AMOV $dst";
   }
 }
-
 def : Pat<(i32 (frameindex:$ptr)), (ADDI (i32 (to_tframeindex $ptr)), (i32 0))>;
+
+def : Pat<(brind i32:$tgt), (BR GP:$tgt)>;
 
 def : Pat<(i32 LLIimm:$val), (LLI imm:$val)>;
 def : Pat<(i32 LUIimm:$val), (LUI (HI20 imm:$val))>;
@@ -304,6 +328,9 @@ def : Pat<(truncstorei8 i32:$val, frameindex:$ptr), (STB i32:$val, (to_tframeind
 def : Pat<(load i32:$addr), (LD i32:$addr, (i32 0))>;
 def : Pat<(load (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
 def : Pat<(load frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
+
+def : Pat<(extloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
+def : Pat<(extloadi16 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
 
 def : Pat<(zextloadi8 i32:$addr), (LDB i32:$addr, (i32 0))>;
 def : Pat<(zextloadi8 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
