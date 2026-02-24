@@ -8,6 +8,9 @@ SC32MCAsmInfo::SC32MCAsmInfo() {
   HasSingleParameterDotFile = false;
   HasDotTypeDotSizeDirective = false;
   CommentString = ";";
+  AsciiDirective = nullptr;
+  AscizDirective = nullptr;
+  Data8bitsDirective = "\tDB ";
 }
 
 void SC32MCAsmInfo::printSwitchToSection(const MCSection &Section,

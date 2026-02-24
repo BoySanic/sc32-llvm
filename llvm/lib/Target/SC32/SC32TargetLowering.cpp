@@ -30,6 +30,8 @@ SC32TargetLowering::SC32TargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::CTPOP, MVT::i32, Expand);
   setLoadExtAction(ISD::SEXTLOAD, MVT::i32, MVT::i8, Expand);
 
+  setOperationAction(ISD::GlobalAddress, MVT::i32, Custom);
+
   computeRegisterProperties(STI.getRegisterInfo());
 }
 
@@ -197,6 +199,18 @@ static SDValue LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) {
   return DAG.getNode(SC32ISD::SELECT, DL, MVT::i32, CC, True, False, Glue);
 }
 
+static SDValue LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) {
+  SDLoc DL(Op);
+
+  const GlobalAddressSDNode *GA = cast<GlobalAddressSDNode>(Op);
+  SDValue TGA = DAG.getTargetGlobalAddress(
+      GA->getGlobal(), DL, GA->getValueType(0), GA->getOffset());
+
+  SDValue Hi = DAG.getNode(SC32ISD::HI, DL, MVT::i32, TGA);
+  SDValue Lo = DAG.getNode(SC32ISD::LO, DL, MVT::i32, Hi, TGA);
+  return Lo;
+}
+
 SDValue SC32TargetLowering::LowerOperation(SDValue Op,
                                            SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
@@ -206,6 +220,8 @@ SDValue SC32TargetLowering::LowerOperation(SDValue Op,
     return LowerBR_CC(Op, DAG);
   case ISD::SELECT_CC:
     return LowerSELECT_CC(Op, DAG);
+  case ISD::GlobalAddress:
+    return LowerGlobalAddress(Op, DAG);
   }
 }
 

@@ -56,6 +56,12 @@ def SC32cmp : SDNode<"SC32ISD::CMP", SDTSC32cmp, [SDNPOutGlue]>;
 def SC32jmp : SDNode<"SC32ISD::JMP", SDTSC32jmp, [SDNPHasChain, SDNPInGlue]>;
 def SC32select : SDNode<"SC32ISD::SELECT", SDTSC32select, [SDNPInGlue]>;
 
+def SDTSC32hi : SDTypeProfile<1, 1, []>;
+def SDTSC32lo : SDTypeProfile<1, 2, []>;
+
+def SC32hi : SDNode<"SC32ISD::HI", SDTSC32hi>;
+def SC32lo : SDNode<"SC32ISD::LO", SDTSC32lo>;
+
 def SDT_SC32Call : SDTypeProfile<0, -1, [SDTCisVT<0, iPTR>]>;
 def SDT_SC32Ret : SDTypeProfile<0, 0, []>;
 
@@ -273,10 +279,11 @@ let Namespace = "SC32" in {
   }
 }
 
-
 def : Pat<(i32 LLIimm:$val), (LLI imm:$val)>;
-
 def : Pat<(i32 LUIimm:$val), (LUI (HI20 imm:$val))>;
+
+def : Pat<(SC32hi tglobaladdr:$addr), (LUI tglobaladdr:$addr)>;
+def : Pat<(SC32lo i32:$base, tglobaladdr:$addr), (ORI i32:$base, tglobaladdr:$addr)>;
 
 def : Pat<(i32 imm:$val), (ORI (LUI (HI20 imm:$val)), (LO20 imm:$val))>;
 
