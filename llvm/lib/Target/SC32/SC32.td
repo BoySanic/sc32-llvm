@@ -266,8 +266,8 @@ let Namespace = "SC32" in {
 
   def BR : Instruction {
     let OutOperandList = (outs);
-    let InOperandList = (ins GP:$tgt);
-    let AsmString = "BR $tgt";
+    let InOperandList = (ins GP:$tgt, i32imm:$offset);
+    let AsmString = "BR $tgt, $offset";
     let isTerminator = 1;
     let isBranch = 1;
   }
@@ -307,7 +307,8 @@ let Namespace = "SC32" in {
 }
 def : Pat<(i32 (frameindex:$ptr)), (ADDI (i32 (to_tframeindex $ptr)), (i32 0))>;
 
-def : Pat<(brind i32:$tgt), (BR GP:$tgt)>;
+def : Pat<(brind i32:$tgt), (BR GP:$tgt, (i32 0))>;
+def : Pat<(brind (add GP:$base, MemOffset:$offset)), (BR GP:$base, imm:$offset)>;
 
 def : Pat<(i32 LLIimm:$val), (LLI imm:$val)>;
 def : Pat<(i32 LUIimm:$val), (LUI (HI20 imm:$val))>;
@@ -325,13 +326,19 @@ def : Pat<(truncstorei8 i32:$val, i32:$addr), (STB i32:$val, i32:$addr, (i32 0))
 def : Pat<(truncstorei8 i32:$val, (add GP:$base, MemOffset:$offset)), (STB i32:$val, GP:$base, imm:$offset)>;
 def : Pat<(truncstorei8 i32:$val, frameindex:$ptr), (STB i32:$val, (to_tframeindex $ptr), (i32 0))>;
 
+// Word loads
 def : Pat<(load i32:$addr), (LD i32:$addr, (i32 0))>;
 def : Pat<(load (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
 def : Pat<(load frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
 
-def : Pat<(extloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
-def : Pat<(extloadi16 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
+// Halfword loads
+def : Pat<(zextloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
+def : Pat<(zextloadi16 (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
 
+def : Pat<(extloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
+def : Pat<(extloadi16 (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
+
+// Byte loads
 def : Pat<(zextloadi8 i32:$addr), (LDB i32:$addr, (i32 0))>;
 def : Pat<(zextloadi8 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
 def : Pat<(zextloadi8 frameindex:$ptr), (LDB (to_tframeindex $ptr), (i32 0))>;
