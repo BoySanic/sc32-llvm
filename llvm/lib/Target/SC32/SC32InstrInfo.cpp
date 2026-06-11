@@ -129,6 +129,40 @@ unsigned SC32InstrInfo::insertBranch(
   return Count;
 }
 
+static unsigned getReverseBranchOpcode(unsigned Opcode) {
+  switch (Opcode) {
+  case SC32::JEQ:
+    return SC32::JNE;
+  case SC32::JNE:
+    return SC32::JEQ;
+  case SC32::JLE:
+    return SC32::JGT;
+  case SC32::JLT:
+    return SC32::JGE;
+  case SC32::JGT:
+    return SC32::JLE;
+  case SC32::JGE:
+    return SC32::JLT;
+  case SC32::JLEU:
+    return SC32::JGTU;
+  case SC32::JLTU:
+    return SC32::JGEU;
+  case SC32::JGTU:
+    return SC32::JLEU;
+  case SC32::JGEU:
+    return SC32::JLTU;
+  }
+
+  llvm_unreachable("Not a conditional branch");
+}
+
+bool SC32InstrInfo::reverseBranchCondition(
+    SmallVectorImpl<MachineOperand> &Cond) const {
+  assert(Cond.size() == 1);
+  Cond[0].setImm(getReverseBranchOpcode(Cond[0].getImm()));
+  return false;
+}
+
 void SC32InstrInfo::storeRegToStackSlot(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MI, Register SrcReg,
     bool IsKill, int FrameIndex, const TargetRegisterClass *RC, Register VReg,
