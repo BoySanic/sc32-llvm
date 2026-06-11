@@ -67,7 +67,7 @@ def SDT_SC32Ret : SDTypeProfile<0, 0, []>;
 
 def call : SDNode<"SC32ISD::CALL", SDT_SC32Call, [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue, SDNPVariadic]>;
 def retglue : SDNode<"SC32ISD::RET_GLUE", SDT_SC32Ret, [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
-
+ 
 def to_tframeindex : SDNodeXForm<frameindex, [{
   return CurDAG->getTargetFrameIndex(N->getIndex(), MVT::i32);
 }]>;
@@ -353,6 +353,10 @@ def : Pat<(zextloadi8 frameindex:$ptr), (LDB (to_tframeindex $ptr), (i32 0))>;
 def : Pat<(extloadi8 i32:$addr), (LDB i32:$addr, (i32 0))>;
 def : Pat<(extloadi8 (add GP:$base, MemOffset:$offset)), (LDB GP:$base, imm:$offset)>;
 def : Pat<(extloadi8 frameindex:$ptr), (LDB (to_tframeindex $ptr), (i32 0))>;
+
+// Jump tables
+def : Pat<(SC32hi tjumptable:$addr), (LUI tjumptable:$addr)>;
+def : Pat<(SC32lo i32:$base, tjumptable:$addr), (ORI i32:$base, tjumptable:$addr)>;
 
 def SC32InstrInfo : InstrInfo;
 

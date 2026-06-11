@@ -19,6 +19,7 @@ void SC32AsmPrinter::emitInstruction(const MachineInstr *MI) {
       const MCSymbol *Symbol;
       const MCExpr *Expr;
     default:
+      llvm::errs() << "CRASH: Unhandled MachineOperand type: " << (int)MO.getType() << "\n";
       llvm_unreachable("unknown operand type");
     case MachineOperand::MO_Register:
       Inst.addOperand(MCOperand::createReg(MO.getReg()));
@@ -38,9 +39,14 @@ void SC32AsmPrinter::emitInstruction(const MachineInstr *MI) {
       break;
     case MachineOperand::MO_RegisterMask:
       break;
+    case MachineOperand::MO_JumpTableIndex:
+      Symbol = GetJTISymbol(MO.getIndex());
+      Expr = MCSymbolRefExpr::create(Symbol, OutContext);
+
+      Inst.addOperand(MCOperand::createExpr(Expr));
+      break;
     }
   }
-
   EmitToStreamer(*OutStreamer, Inst);
 }
 

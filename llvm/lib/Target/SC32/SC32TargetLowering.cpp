@@ -4,6 +4,7 @@
 #include "SC32SelectionDAGInfo.h"
 #include "llvm/CodeGen/CallingConvLower.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
+#include "llvm/CodeGen/SelectionDAGNodes.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
 
 using namespace llvm;
@@ -23,6 +24,7 @@ SC32TargetLowering::SC32TargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::BR_JT, MVT::Other, Expand);
   setOperationAction(ISD::BR_CC, MVT::i32, Custom);
   setOperationAction(ISD::SELECT_CC, MVT::i32, Custom);
+  setOperationAction(ISD::JumpTable, MVT::i32, Custom);
 
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Expand);
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i1, Expand);
@@ -230,6 +232,19 @@ static SDValue LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) {
   return Lo;
 }
 
+static SDValue LowerJumpTable(SDValue Op, SelectionDAG &DAG) {
+  SDLoc DL(Op);
+
+  const JumpTableSDNode *JT = cast<JumpTableSDNode>(Op);
+
+  SDValue Result = DAG.getTargetJumpTable(JT->getIndex(), MVT::i32);
+
+  SDValue Hi = DAG.getNode(SC32ISD::HI, DL, MVT::i32, Result);
+  SDValue Lo = DAG.getNode(SC32ISD::LO, DL, MVT::i32, Hi, Result);
+
+  return Lo;
+}
+
 SDValue SC32TargetLowering::LowerOperation(SDValue Op,
                                            SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
@@ -241,6 +256,8 @@ SDValue SC32TargetLowering::LowerOperation(SDValue Op,
     return LowerSELECT_CC(Op, DAG);
   case ISD::GlobalAddress:
     return LowerGlobalAddress(Op, DAG);
+  case ISD::JumpTable:
+    return LowerJumpTable(Op, DAG);
   }
 }
 

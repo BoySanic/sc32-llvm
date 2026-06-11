@@ -27,7 +27,6 @@ public:
 
   SDValue LowerCall(CallLoweringInfo &CLI,
                     SmallVectorImpl<SDValue> &InVals) const override;
-
   SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
 
   MachineBasicBlock *
