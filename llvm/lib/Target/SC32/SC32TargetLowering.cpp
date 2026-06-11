@@ -34,7 +34,6 @@ SC32TargetLowering::SC32TargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::CTPOP, MVT::i32, Expand);
   setOperationAction(ISD::SETCC, MVT::i32, Expand);
 
-  setLoadExtAction(ISD::EXTLOAD, MVT::i32, MVT::i8, Expand);
   setLoadExtAction(ISD::SEXTLOAD, MVT::i32, MVT::i8, Expand);
 
   setLoadExtAction(ISD::SEXTLOAD, MVT::i32, MVT::i16, Expand);

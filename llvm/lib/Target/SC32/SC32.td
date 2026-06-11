@@ -337,10 +337,6 @@ def : Pat<(load (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
 def : Pat<(load frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
 
 // Halfword loads
-def : Pat<(zextloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
-def : Pat<(zextloadi16 (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
-def : Pat<(zextloadi16 frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
-
 def : Pat<(extloadi16 i32:$addr), (LD i32:$addr, (i32 0))>;
 def : Pat<(extloadi16 (add GP:$base, MemOffset:$offset)), (LD GP:$base, imm:$offset)>;
 def : Pat<(extloadi16 frameindex:$ptr), (LD (to_tframeindex $ptr), (i32 0))>;
