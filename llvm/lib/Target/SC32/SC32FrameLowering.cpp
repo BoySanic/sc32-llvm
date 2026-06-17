@@ -1,5 +1,6 @@
 #include "SC32FrameLowering.h"
 #include "MCTargetDesc/SC32MCTargetDesc.h"
+#include "SC32InstrInfo.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
@@ -62,4 +63,29 @@ void SC32FrameLowering::emitEpilogue(MachineFunction &MF,
 
 bool SC32FrameLowering::hasFPImpl(const MachineFunction &MF) const {
   return false;
+}
+void SC32FrameLowering::emitSPAdjustment(MachineFunction &MF, MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI, int NumBytes) const {
+  DebugLoc dl;
+
+  const SC32InstrInfo &TII = *static_cast<const SC32InstrInfo*>(MF.getSubtarget().getInstrInfo());
+
+  if (NumBytes >= -524288 && NumBytes < 524288) {
+    BuildMI(MBB, MBBI, dl, TII.get(SC32::ADDI), SC32::GP29).addReg(SC32::GP29).addImm(NumBytes);
+    return;
+  }
+}
+
+MachineBasicBlock::iterator SC32FrameLowering::eliminateCallFramePseudoInstr(MachineFunction &MF, MachineBasicBlock &MBB, MachineBasicBlock::iterator I) const {
+
+  if (!hasReservedCallFrame(MF)) {
+    MachineInstr &MI = *I;
+    int Size = MI.getOperand(0).getImm();
+    if (MI.getOpcode() == SC32::ADJCALLSTACKDOWN)
+      Size = -Size;
+    
+    if (Size)
+      SC32FrameLowering::emitSPAdjustment(MF, MBB, I, Size);
+  }
+
+  return MBB.erase(I);
 }

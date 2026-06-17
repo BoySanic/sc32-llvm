@@ -14,6 +14,12 @@ public:
   void emitEpilogue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
 
   bool hasFPImpl(const MachineFunction &MF) const override;
+
+  MachineBasicBlock::iterator eliminateCallFramePseudoInstr(MachineFunction &MF,
+                                                            MachineBasicBlock &MBB,
+                                                            MachineBasicBlock::iterator I) const override;
+  void emitSPAdjustment(MachineFunction &MF, MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI, int NumBytes) const;
+
 };
 
 } // namespace llvm
