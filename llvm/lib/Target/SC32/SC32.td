@@ -65,9 +65,15 @@ def SC32lo : SDNode<"SC32ISD::LO", SDTSC32lo>;
 def SDT_SC32Call : SDTypeProfile<0, -1, [SDTCisVT<0, iPTR>]>;
 def SDT_SC32Ret : SDTypeProfile<0, 0, []>;
 
+def SDT_SC32CallSeqStart: SDCallSeqStart<[SDTCisVT<0, i32>, SDTCisVT<1, i32>]>;
+def SDT_SC32CallSeqEnd: SDCallSeqEnd<[SDTCisVT<0, i32>, SDTCisVT<1, i32>]>;
+
 def call : SDNode<"SC32ISD::CALL", SDT_SC32Call, [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue, SDNPVariadic]>;
 def retglue : SDNode<"SC32ISD::RET_GLUE", SDT_SC32Ret, [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
- 
+
+def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_SC32CallSeqStart, [SDNPHasChain, SDNPSideEffect, SDNPOutGlue]>;
+def callseq_end : SDNode<"ISD::CALLSEQ_END", SDT_SC32CallSeqEnd, [SDNPHasChain, SDNPSideEffect, SDNPOptInGlue, SDNPOutGlue]>;
+
 def to_tframeindex : SDNodeXForm<frameindex, [{
   return CurDAG->getTargetFrameIndex(N->getIndex(), MVT::i32);
 }]>;
@@ -165,6 +171,18 @@ class Select<CondCode OpCC> : Instruction {
   let InOperandList = (ins GP:$t, GP:$f);
   let Pattern = [(set i32:$dst, (SC32select OpCC, i32:$t, i32:$f))];
   let usesCustomInserter = 1;
+}
+
+class Pseudo<dag outs, dag ins, list<dag> pattern>
+   : Instruction {
+  let Namespace = "SC32";
+  let OutOperandList = outs;
+  let InOperandList = ins;
+  let Pattern = pattern;
+  let isCodeGenOnly = 1;
+  let isPseudo = 1;
+  let Size = 0;
+  let AsmString = "";
 }
 
 let Namespace = "SC32" in {
@@ -308,7 +326,14 @@ let Namespace = "SC32" in {
     let InOperandList = (ins AUX:$aux);
     let AsmString = "AMOV $dst";
   }
+  let Defs = [GP29], Uses = [GP29] in {
+
 }
+  def ADJCALLSTACKDOWN : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
+                                [(callseq_start timm:$amt1, timm:$amt2)]>;
+  def ADJCALLSTACKUP : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
+                                     [(callseq_end timm:$amt1, timm:$amt2)]>;
+  }
 def : Pat<(i32 (frameindex:$ptr)), (ADDI (i32 (to_tframeindex $ptr)), (i32 0))>;
 
 // Indirect branch

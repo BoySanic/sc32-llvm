@@ -3,6 +3,7 @@
 #include "SC32RegisterInfo.h"
 #include "SC32SelectionDAGInfo.h"
 #include "llvm/CodeGen/CallingConvLower.h"
+#include "llvm/CodeGen/ISDOpcodes.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/SelectionDAGNodes.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
@@ -21,6 +22,7 @@ SC32TargetLowering::SC32TargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::MULHU, MVT::i32, Expand);
   setOperationAction(ISD::MUL, MVT::i32, Expand);
 
+  setOperationAction(ISD::BRCOND, MVT::Other, Expand);
   setOperationAction(ISD::BR_JT, MVT::Other, Expand);
   setOperationAction(ISD::BR_CC, MVT::i32, Custom);
   setOperationAction(ISD::SELECT_CC, MVT::i32, Custom);
@@ -42,8 +44,9 @@ SC32TargetLowering::SC32TargetLowering(const TargetMachine &TM,
   setTruncStoreAction(MVT::i32, MVT::i16, Expand);
 
   setOperationAction(ISD::GlobalAddress, MVT::i32, Custom);
-
+  setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i32, Expand);
   computeRegisterProperties(STI.getRegisterInfo());
+  setStackPointerRegisterToSaveRestore(SC32::GP29);
 }
 
 SDValue SC32TargetLowering::LowerFormalArguments(
